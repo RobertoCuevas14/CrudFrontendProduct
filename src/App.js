@@ -1,25 +1,48 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState, useEffect } from 'react';
+import ProductList from './components/ProductList/ProductList';
+import ProductForm from './components/ProductForm/ProductForm';
+import productService from './services/productService';
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+    const [products, setProducts] = useState([]);
+    const [refresh, setRefresh] = useState(false); // Para forzar actualizaciones
+
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const products = await productService.getAllProducts();
+                setProducts(products);
+            } catch (error) {
+                console.error('Error fetching products:', error);
+            }
+        };
+        
+        fetchProducts();
+    }, [refresh]); // Cada vez que 'refresh' cambie, se vuelve a llamar a fetchProducts
+
+    const handleProductAdded = () => {
+        setRefresh(prev => !prev); // Forzar actualización de productos
+    };
+
+    const handleProductEdit = () => {
+        setRefresh(prev => !prev); // Forzar actualización tras editar
+    };
+
+    const handleProductDelete = async (id) => {
+        try {
+            await productService.deleteProduct(id);
+            setRefresh(prev => !prev); // Forzar actualización tras eliminar
+        } catch (error) {
+            console.error('Error deleting product:', error);
+        }
+    };
+
+    return (
+        <div>
+            <ProductForm onProductAdded={handleProductAdded} />
+            <ProductList products={products} onDelete={handleProductDelete} onEdit={handleProductEdit} />
+        </div>
+    );
 }
 
 export default App;
